@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec Casino - Penetration Testing Playground</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            neon: '#0ea5e9',
+                            dark: '#0f172a',
+                            matrix: '#10b981',
+                            alert: '#ef4444'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['"Fira Code"', 'Consolas', 'monospace'],
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-mono {
+            font-family: 'Fira Code', monospace;
+        }
+        .cyber-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(14, 165, 233, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(14, 165, 233, 0.03) 1px, transparent 1px);
+        }
+        .dark .cyber-grid {
+            background-image: 
+                linear-gradient(to right, rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+        }
+        .typing-animation {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid #0ea5e9;
+            animation: typing 3s steps(40, end), blink 0.75s step-end infinite;
+        }
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        @keyframes blink {
+            from, to { border-color: transparent }
+            50% { border-color: #0ea5e9; }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+        }
+        .dark .glass-card {
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-[#fafafa] text-gray-900 dark:bg-[#0b1120] dark:text-gray-100 transition-colors duration-300 min-h-screen cyber-grid flex flex-col relative overflow-x-hidden">
+    <div class="fixed top-[-15%] left-[-10%] w-[50%] h-[50%] bg-sky-500/10 dark:bg-sky-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 dark:bg-purple-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+    <nav class="border-b border-gray-200/50 dark:border-gray-800/50 bg-white/60 dark:bg-[#0b1120]/60 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="/" class="flex items-center gap-3 cursor-pointer">
+                    <div class="p-2 bg-sky-50 dark:bg-sky-500/10 rounded-lg border border-sky-100 dark:border-sky-500/20">
+                        <svg class="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-extrabold tracking-tight">CyberSec<span class="text-sky-500">Casino</span></h1>
+                </a>
+                <button id="theme-toggle" aria-label="Toggle Dark Mode" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700/50 focus:outline-none">
+                    <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+                    <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden text-sky-400" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main class="flex-grow flex flex-col items-center justify-center relative z-10 w-full px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+        <div class="w-full max-w-5xl mx-auto flex flex-col items-center px-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono text-[11px] md:text-xs font-semibold tracking-wide mb-8 shadow-sm">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-full w-full bg-emerald-500"></span>
+                </span>
+                SYSTEM.STATUS = ONLINE
+            </div>
+            <div class="text-center max-w-3xl mb-14">
+                <h2 class="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6 leading-[1.1]">
+                    Welcome to <br class="hidden sm:block" />
+                    <span class="bg-gradient-to-r from-sky-500 to-purple-500 text-gradient drop-shadow-sm">The Mainframe</span>
+                </h2>
+                <p class="text-gray-600 dark:text-gray-400 text-sm md:text-lg mb-10 leading-relaxed max-w-2xl mx-auto font-medium">
+                    A playground for penetration testing and probability analysis. Test the vulnerabilities of Pseudo-Random Number Generators (PRNG) through our simulations.
+                </p>
+                <div class="inline-flex items-center font-mono text-gray-600 dark:text-gray-400 text-xs md:text-sm bg-white/60 dark:bg-gray-900/60 px-5 py-3 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm backdrop-blur-md">
+                    <span class="text-sky-500 font-bold mr-2 text-sm md:text-base">root@casino:~$</span> 
+                    <span class="typing-animation inline-block">./init_simulations.sh</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mx-auto">
+               <a href="gacha.html" class="glass-card group flex flex-col rounded-[2rem] p-8 hover:border-sky-500/40 dark:hover:border-sky-500/40 transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-start justify-between mb-8">
+                        <div class="w-16 h-16 bg-sky-50 dark:bg-sky-500/10 rounded-2xl flex items-center justify-center border border-sky-100 dark:border-sky-500/20 group-hover:scale-110 transition-transform duration-500 shadow-sm">
+                            <svg class="w-8 h-8 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                        </div>
+                        <div class="p-2.5 rounded-full bg-white dark:bg-gray-800/80 text-gray-400 group-hover:text-sky-500 border border-gray-100 dark:border-gray-700/50 shadow-sm transition-all duration-300 group-hover:bg-sky-50 dark:group-hover:bg-sky-500/10 dark:group-hover:border-sky-500/30">
+                            <svg class="w-5 h-5 -rotate-45 group-hover:rotate-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">Gacha PRNG Sec</h3>
+                    <div class="text-gray-500 dark:text-gray-400 mb-10 font-mono text-[13px] leading-8 flex-grow space-y-1">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sky-500 opacity-70">></span> <span>Execute algoritma pseudo-random</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sky-500 opacity-70">></span> <span>Analisis LCG vulnerability</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sky-500 opacity-70">></span> <span>Bypass CCG/Mode Bandar testing</span>
+                        </div>
+                    </div>
+                    <div class="mt-auto w-full py-3.5 text-center rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 font-semibold text-sm border border-gray-200 dark:border-gray-700 group-hover:bg-sky-500 group-hover:border-sky-500 group-hover:text-white transition-all shadow-sm">
+                        Initialize Module
+                    </div>
+               </a>
+               <a href="slot.html" class="glass-card group flex flex-col rounded-[2rem] p-8 hover:border-purple-500/40 dark:hover:border-purple-500/40 transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-start justify-between mb-8">
+                        <div class="w-16 h-16 bg-purple-50 dark:bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-100 dark:border-purple-500/20 group-hover:scale-110 transition-transform duration-500 shadow-sm">
+                            <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div class="p-2.5 rounded-full bg-white dark:bg-gray-800/80 text-gray-400 group-hover:text-purple-500 border border-gray-100 dark:border-gray-700/50 shadow-sm transition-all duration-300 group-hover:bg-purple-50 dark:group-hover:bg-purple-500/10 dark:group-hover:border-purple-500/30">
+                            <svg class="w-5 h-5 -rotate-45 group-hover:rotate-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">Slot Machine Exploit</h3>
+                    <div class="text-gray-500 dark:text-gray-400 mb-10 font-mono text-[13px] leading-8 flex-grow space-y-1">
+                        <div class="flex items-center gap-3">
+                            <span class="text-purple-500 opacity-70">></span> <span>Crack mekanisme sistem slot</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-purple-500 opacity-70">></span> <span>Observasi RNG slot patterns</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-purple-500 opacity-70">></span> <span>Simulasi trigger manipulasi bet</span>
+                        </div>
+                    </div>
+                    <div class="mt-auto w-full py-3.5 text-center rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 font-semibold text-sm border border-gray-200 dark:border-gray-700 group-hover:bg-purple-500 group-hover:border-purple-500 group-hover:text-white transition-all shadow-sm">
+                        Run Exploit
+                    </div>
+               </a>
+            </div>
+        </div>
+    </main>
+    <footer class="w-full relative z-10 py-6 border-t border-gray-200/50 dark:border-gray-800/50 bg-white/40 dark:bg-[#0b1120]/40 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-[11px] md:text-xs text-gray-500 dark:text-gray-400 font-mono">
+                © 2026 CyberSec Casino Simulation. Educational Use Only.
+            </p>
+            <div class="flex items-center gap-2 font-mono text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1.5 rounded border border-emerald-200 dark:border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Secured Connection
+            </div>
+        </div>
+    </footer>
+    <script>
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            lightIcon.classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            darkIcon.classList.remove('hidden');
+        }
+        themeToggleBtn.addEventListener('click', function() {
+            darkIcon.classList.toggle('hidden');
+            lightIcon.classList.toggle('hidden');
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+    </script>
+</body>
+</html>

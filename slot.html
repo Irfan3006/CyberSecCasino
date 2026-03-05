@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Slot PRNG - Cyber Sec Edition</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        ssr: '#ef4444', 
+                        sr: '#a855f7',  
+                        r: '#3b82f6',   
+                        n: '#9ca3af'    
+                    },
+                    animation: {
+                        'spin-fast': 'spin 0.2s linear infinite',
+                        'bounce-short': 'bounce 0.5s ease-in-out 2'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .slot-box {
+            box-shadow: inset 0 4px 6px -1px rgba(0, 0, 0, 0.5), inset 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        }
+        .win-glow-ssr { box-shadow: 0 0 20px #ef4444, inset 0 0 10px #ef4444; border-color: #ef4444; }
+        .win-glow-sr { box-shadow: 0 0 20px #a855f7, inset 0 0 10px #a855f7; border-color: #a855f7; }
+        .win-glow-r { box-shadow: 0 0 20px #3b82f6, inset 0 0 10px #3b82f6; border-color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300 min-h-screen font-sans">
+    <nav class="border-b border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="/" class="flex items-center gap-3 cursor-pointer">
+                    <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <h1 class="text-xl font-bold tracking-tight">Slot<span class="text-red-500">Sec</span> PRNG</h1>
+                </a>
+                <div class="flex items-center gap-4">
+                    <button id="theme-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors focus:outline-none">
+                        <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+                        <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden text-blue-300" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="space-y-6">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Konfigurasi Mesin Slot</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">Algoritma PRNG</label>
+                            <select id="algo-select" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                <option value="math">Standard Math.random()</option>
+                                <option value="lcg">Linear Congruential Generator (LCG)</option>
+                                <option value="ccg">Mode Bandar (Deck Outcome)</option>
+                            </select>
+                        </div>
+                        <div id="seed-container" class="hidden">
+                            <label class="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">Seed LCG (Angka Awal)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="seed-input" value="1337" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono">
+                                <button id="btn-set-seed" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 rounded-lg text-sm font-medium transition-colors">Set</button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Dalam konteks cyber security, jika seed dan formula LCG diketahui, attacker dapat memprediksi kapan Jackpot akan keluar 100%.</p>
+                        </div>
+                        <div id="ccg-container" class="hidden mt-4 p-4 bg-gray-100 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <label class="block text-sm font-medium mb-3 text-gray-600 dark:text-gray-400">Kuota Hasil (Wajib 100 Spin)</label>
+                            <div class="grid grid-cols-4 gap-2 mb-3">
+                                <div>
+                                    <span class="text-[10px] font-bold text-red-600 dark:text-red-500 text-center block mb-1">J-POT</span>
+                                    <input type="number" id="in-ssr" value="2" min="0" max="100" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm text-center font-mono" title="Jackpot">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-purple-600 dark:text-purple-400 text-center block mb-1">BIG</span>
+                                    <input type="number" id="in-sr" value="8" min="0" max="100" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm text-center font-mono" title="Big Win">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 text-center block mb-1">MID</span>
+                                    <input type="number" id="in-r" value="20" min="0" max="100" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm text-center font-mono" title="Mid Win">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 text-center block mb-1">LOSE</span>
+                                    <input type="number" id="in-n" value="70" min="0" max="100" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm text-center font-mono" title="Zonk/Lose">
+                                </div>
+                            </div>
+                            <button id="btn-set-ccg" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 py-2 rounded-lg text-sm font-medium transition-colors">Suntik Deck ke Mesin</button>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
+                        <div>
+                            <span class="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Saldo Credits</span>
+                            <div id="saldo-display" class="text-xl font-bold text-gray-900 dark:text-white">Rp 1.000.000</div>
+                        </div>
+                        <button id="btn-topup" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm shadow-emerald-500/30 transition-all active:scale-95">+ Top Up</button>
+                    </div>
+                    <div class="mt-4 text-xs space-y-1 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div class="flex justify-between"><span class="text-red-500 font-bold">💀💀💀 Jackpot (0-Day)</span> <span>Rp 1.000.000</span></div>
+                        <div class="flex justify-between"><span class="text-purple-500 font-bold">🕷️🕷️🕷️ Big Win (Trojan)</span> <span>Rp 250.000</span></div>
+                        <div class="flex justify-between"><span class="text-blue-500 font-bold">🛡️🛡️🛡️ Mid Win (Wall)</span> <span>Rp 50.000</span></div>
+                        <div class="flex justify-between"><span class="text-gray-500">Meleset / Zonk</span> <span>Rp 0</span></div>
+                    </div>
+                    <div class="mt-6 flex gap-3">
+                        <button id="btn-spin-1" class="flex-1 bg-gradient-to-t from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white py-3 px-4 rounded-xl font-black text-lg shadow-lg shadow-red-500/30 transition-all active:scale-95 flex flex-col items-center leading-tight uppercase tracking-wider border-b-4 border-red-800">
+                            <span>SPIN</span>
+                            <span class="text-[10px] font-normal opacity-80 mt-0.5 normal-case">Rp 10.000 / putaran</span>
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <button id="btn-spin-10" class="w-full bg-gray-800 hover:bg-gray-700 text-white dark:bg-gray-700 dark:hover:bg-gray-600 py-2 rounded-lg text-sm font-bold shadow-md transition-all active:scale-95 border-b-2 border-gray-900">AUTO SPIN 10x (Rp 100.000)</button>
+                    </div>
+                    <button id="btn-reset" class="w-full mt-3 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 py-2 rounded-lg text-sm font-medium transition-colors">Reset Terminal</button>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Statistik (Drop Rate)</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50">
+                            <div class="text-xs font-semibold text-red-600 dark:text-red-500">Jackpot (2%)</div>
+                            <div id="stat-ssr" class="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-900/50">
+                            <div class="text-xs font-semibold text-purple-600 dark:text-purple-400">Big Win (8%)</div>
+                            <div id="stat-sr" class="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50">
+                            <div class="text-xs font-semibold text-blue-600 dark:text-blue-400">Mid Win (20%)</div>
+                            <div id="stat-r" class="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                            <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">Lose (70%)</div>
+                            <div id="stat-n" class="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Total Spins:</span>
+                        <span id="stat-total" class="font-bold text-lg">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <div class="bg-gray-900 p-8 rounded-3xl shadow-2xl border-4 border-gray-800 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-600 via-yellow-500 to-red-600"></div>
+                    <div class="text-center mb-6">
+                        <span id="win-message" class="text-2xl font-black text-yellow-400 tracking-widest drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] h-8 block uppercase">READY TO HACK</span>
+                        <span id="current-prng-val" class="text-[10px] font-mono text-gray-500 mt-1 block">Initialize Sequence...</span>
+                    </div>
+                    <div class="flex justify-center gap-4 bg-gray-800 p-6 rounded-2xl border-y-4 border-gray-700 slot-box">
+                        <div id="reel-1" class="w-24 h-32 md:w-32 md:h-40 bg-gray-100 dark:bg-gray-950 rounded-xl border-2 border-gray-400 dark:border-gray-600 flex items-center justify-center text-6xl md:text-7xl shadow-inner overflow-hidden relative transition-all duration-300">
+                            <span class="absolute transform transition-transform" id="sym-1">❓</span>
+                        </div>
+                        <div id="reel-2" class="w-24 h-32 md:w-32 md:h-40 bg-gray-100 dark:bg-gray-950 rounded-xl border-2 border-gray-400 dark:border-gray-600 flex items-center justify-center text-6xl md:text-7xl shadow-inner overflow-hidden relative transition-all duration-300">
+                            <span class="absolute transform transition-transform" id="sym-2">❓</span>
+                        </div>
+                        <div id="reel-3" class="w-24 h-32 md:w-32 md:h-40 bg-gray-100 dark:bg-gray-950 rounded-xl border-2 border-gray-400 dark:border-gray-600 flex items-center justify-center text-6xl md:text-7xl shadow-inner overflow-hidden relative transition-all duration-300">
+                            <span class="absolute transform transition-transform" id="sym-3">❓</span>
+                        </div>
+                    </div>
+                    <div class="mt-8 flex justify-between items-center px-4">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse delay-75"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse delay-150"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 font-mono">SEC-TERMINAL v2.0</div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex-grow flex flex-col">
+                    <h3 class="text-sm font-semibold mb-3 text-gray-600 dark:text-gray-300 border-b pb-2 border-gray-100 dark:border-gray-700">Audit Trail (Log)</h3>
+                    <div id="history-log" class="flex-grow min-h-[200px] max-h-[300px] overflow-y-auto space-y-1 text-xs font-mono bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            lightIcon.classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            darkIcon.classList.remove('hidden');
+        }
+        themeToggleBtn.addEventListener('click', function() {
+            darkIcon.classList.toggle('hidden');
+            lightIcon.classList.toggle('hidden');
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+        const SYMBOLS = {
+            SSR: { icon: '💀', name: '0-Day', pay: 1000000, class: 'win-glow-ssr', text: 'text-red-500' },
+            SR:  { icon: '🕷️', name: 'Trojan', pay: 250000, class: 'win-glow-sr', text: 'text-purple-500' },
+            R:   { icon: '🛡️', name: 'Firewall', pay: 50000, class: 'win-glow-r', text: 'text-blue-500' },
+            N:   { icon: '🐛', name: 'Bug/Zonk', pay: 0, class: '', text: 'text-gray-500' },
+            N2:  { icon: '📄', name: 'Log', pay: 0, class: '', text: 'text-gray-500' } 
+        };
+        const RATES = { SSR: 0.02, SR: 0.08, R: 0.20, N: 0.70 };
+        class LCG {
+            constructor(seed) {
+                this.seed = seed;
+                this.a = 1103515245;
+                this.c = 12345;
+                this.m = Math.pow(2, 31);
+            }
+            next() {
+                this.seed = (this.a * this.seed + this.c) % this.m;
+                return this.seed / this.m; 
+            }
+        }
+        let currentLCG = new LCG(1337);
+        let useLCG = false;
+        let currentAlgo = 'math'; 
+        let ccgPool = []; 
+        let stats = { SSR: 0, SR: 0, R: 0, N: 0, Total: 0 };
+        let balance = 1000000;  
+        const PRICE_PER_SPIN = 10000; 
+        let isSpinning = false;
+        const algoSelect = document.getElementById('algo-select');
+        const seedContainer = document.getElementById('seed-container');
+        const seedInput = document.getElementById('seed-input');
+        const btnSetSeed = document.getElementById('btn-set-seed');
+        const ccgContainer = document.getElementById('ccg-container');
+        const inSSR = document.getElementById('in-ssr');
+        const inSR = document.getElementById('in-sr');
+        const inR = document.getElementById('in-r');
+        const inN = document.getElementById('in-n');
+        const btnSetCcg = document.getElementById('btn-set-ccg');
+        const saldoDisplay = document.getElementById('saldo-display');
+        const btnTopup = document.getElementById('btn-topup');
+        const btnSpin1 = document.getElementById('btn-spin-1');
+        const btnSpin10 = document.getElementById('btn-spin-10');
+        const btnReset = document.getElementById('btn-reset');
+        const historyLog = document.getElementById('history-log');
+        const currentPrngVal = document.getElementById('current-prng-val');
+        const winMessage = document.getElementById('win-message');
+        const reels = [
+            { box: document.getElementById('reel-1'), sym: document.getElementById('sym-1') },
+            { box: document.getElementById('reel-2'), sym: document.getElementById('sym-2') },
+            { box: document.getElementById('reel-3'), sym: document.getElementById('sym-3') }
+        ];
+        function formatRupiah(amount) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+        }
+        function updateBalanceUI() {
+            saldoDisplay.innerText = formatRupiah(balance);
+        }
+        function updateStatsUI() {
+            document.getElementById('stat-ssr').innerText = stats.SSR;
+            document.getElementById('stat-sr').innerText = stats.SR;
+            document.getElementById('stat-r').innerText = stats.R;
+            document.getElementById('stat-n').innerText = stats.N;
+            document.getElementById('stat-total').innerText = stats.Total;
+        }
+        function addLog(type, message) {
+            const time = new Date().toLocaleTimeString('id-ID', { hour12: false });
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span class="text-gray-400">[${time}]</span> <span class="text-blue-500">[${type}]</span> ${message}`;
+            historyLog.prepend(logEntry);
+        }
+        function triggerConfetti(outcome) {
+            let particleCount = 50;
+            let spread = 70;
+            if (outcome === 'SSR') {
+                particleCount = 150;
+                spread = 100;
+            } else if (outcome === 'SR') {
+                particleCount = 100;
+                spread = 85;
+            }
+            confetti({
+                particleCount: particleCount,
+                spread: spread,
+                origin: { y: 0.6 },
+                zIndex: 100,
+                disableForReducedMotion: true
+            });
+        }
+        function buildCCGPool() {
+            let ssr = parseInt(inSSR.value) || 0;
+            let sr = parseInt(inSR.value) || 0;
+            let r = parseInt(inR.value) || 0;
+            let n = parseInt(inN.value) || 0;
+            let total = ssr + sr + r + n;
+            if (total !== 100) {
+                addLog('Error', `<span class="text-red-500">Gagal: Total kartu harus 100 (Saat ini: ${total}). Memuat rate default...</span>`);
+                ssr = 2; sr = 8; r = 20; n = 70;
+                inSSR.value = 2; inSR.value = 8; inR.value = 20; inN.value = 70;
+            }
+            ccgPool = [];
+            for(let i=0; i<ssr; i++) ccgPool.push('SSR');
+            for(let i=0; i<sr; i++) ccgPool.push('SR');
+            for(let i=0; i<r; i++) ccgPool.push('R');
+            for(let i=0; i<n; i++) ccgPool.push('N');
+            for (let i = ccgPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [ccgPool[i], ccgPool[j]] = [ccgPool[j], ccgPool[i]];
+            }
+            addLog('System', 'Deck Outcome (100 kartu) berhasil disuntik ke mesin.');
+            currentPrngVal.innerText = `[CCG] Sisa Deck: ${ccgPool.length}/100`;
+        }
+        function getPRNGValue() {
+            return useLCG ? currentLCG.next() : Math.random();
+        }
+        function determineOutcome(rand) {
+            let cumulative = 0;
+            if (rand < RATES.SSR) return 'SSR';
+            cumulative += RATES.SSR;
+            if (rand < cumulative + RATES.SR) return 'SR';
+            cumulative += RATES.SR;
+            if (rand < cumulative + RATES.R) return 'R';
+            return 'N';
+        }
+        function generateReelSymbols(outcome) {
+            if (outcome !== 'N') {
+                return [SYMBOLS[outcome].icon, SYMBOLS[outcome].icon, SYMBOLS[outcome].icon];
+            }
+            const allSymbols = [SYMBOLS.SSR.icon, SYMBOLS.SR.icon, SYMBOLS.R.icon, SYMBOLS.N.icon, SYMBOLS.N2.icon];
+            let res = [];
+            for(let i=0; i<3; i++) {
+                res.push(allSymbols[Math.floor(Math.random() * allSymbols.length)]);
+            }
+            if (res[0] === res[1] && res[1] === res[2]) {
+                res[2] = res[0] === SYMBOLS.N.icon ? SYMBOLS.N2.icon : SYMBOLS.N.icon; 
+            }
+            return res;
+        }
+        async function spin(times = 1) {
+            if (isSpinning) return;
+            const totalCost = times * PRICE_PER_SPIN;
+            if (balance < totalCost) {
+                addLog('Error', `<span class="text-red-500 font-bold">Saldo kurang!</span> Butuh ${formatRupiah(totalCost)}.`);
+                saldoDisplay.classList.add('text-red-500', 'animate-pulse');
+                setTimeout(() => saldoDisplay.classList.remove('text-red-500', 'animate-pulse'), 500);
+                return;
+            }
+            isSpinning = true;
+            balance -= totalCost;
+            updateBalanceUI();
+            let totalReward = 0;
+            for(let i=0; i<times; i++) {
+                reels.forEach(r => {
+                    r.box.classList.remove('win-glow-ssr', 'win-glow-sr', 'win-glow-r');
+                });
+                winMessage.innerText = times > 1 ? `AUTO SPIN ${i+1}/${times}...` : "SPINNING...";
+                winMessage.className = "text-2xl font-black text-white tracking-widest animate-pulse h-8 block uppercase";
+                let outcome, randStr;
+                if (currentAlgo === 'ccg') {
+                    if (ccgPool.length === 0) {
+                        addLog('System', 'Deck kosong! Mengocok otomatis 100 kartu baru...');
+                        buildCCGPool();
+                    }
+                    outcome = ccgPool.pop();
+                    randStr = `[CCG] Sisa: ${ccgPool.length}`;
+                } else {
+                    const rand = getPRNGValue();
+                    outcome = determineOutcome(rand);
+                    randStr = `[PRNG] Val: ${rand.toFixed(6)}`;
+                }
+                stats[outcome]++;
+                stats.Total++;
+                let reward = outcome !== 'N' ? SYMBOLS[outcome].pay : 0;
+                totalReward += reward;
+                const finalSymbols = generateReelSymbols(outcome);
+                await animateReels(finalSymbols, times > 1);
+                balance += reward;
+                updateBalanceUI();
+                updateStatsUI();
+                currentPrngVal.innerText = currentAlgo === 'ccg' ? `[CCG Mode] Sisa Deck: ${ccgPool.length}/100` : `Last Engine Val Updated.`;
+                if (outcome !== 'N') {
+                    const winClass = SYMBOLS[outcome].class;
+                    reels.forEach(r => r.box.classList.add(winClass));
+                    winMessage.innerText = `${outcome} HACK SUCCESS!`;
+                    winMessage.className = `text-2xl font-black tracking-widest drop-shadow-[0_0_10px_currentColor] h-8 block uppercase ${SYMBOLS[outcome].text}`;
+                    triggerConfetti(outcome);
+                    if(outcome === 'SSR') {
+                        document.body.classList.add('animate-pulse');
+                        setTimeout(() => document.body.classList.remove('animate-pulse'), times > 1 ? 500 : 1000);
+                    }
+                    await new Promise(r => setTimeout(r, times > 1 ? 500 : 1000));
+                } else {
+                    winMessage.innerText = "ACCESS DENIED";
+                    winMessage.className = "text-2xl font-black text-gray-500 tracking-widest h-8 block uppercase";
+                    await new Promise(r => setTimeout(r, times > 1 ? 100 : 300));
+                }
+                let logMsg = `Spin ${i+1}/${times} ${randStr} -> Result: <span class="${SYMBOLS[outcome].text} font-bold">${outcome}</span>`;
+                if (reward > 0) logMsg += ` <span class="text-emerald-500 font-bold">(+${formatRupiah(reward)})</span>`;
+                addLog('Spin', logMsg);
+            }
+            if(times > 1) {
+                if (totalReward > 0) {
+                    addLog('Batch', `<span class="text-yellow-500 font-bold">Total Kemenangan Auto-Spin: ${formatRupiah(totalReward)}</span>`);
+                } else {
+                    addLog('Batch', `<span class="text-gray-500 font-bold">Auto-Spin selesai, tidak ada kemenangan.</span>`);
+                }
+            }
+            isSpinning = false;
+        }
+        function animateReels(targetSymbols, isFast = false) {
+            return new Promise(resolve => {
+                const intervalTime = isFast ? 30 : 50;
+                let ticks = 0;
+                const maxTicks = isFast ? 10 : 20; 
+                const tempIcons = ['💀', '🕷️', '🛡️', '🐛', '📄', '🔑', '💻', '💸'];
+                const animInterval = setInterval(() => {
+                    ticks++;
+                    reels.forEach((r, idx) => {
+                        const stopThreshold = isFast ? (maxTicks - (2-idx)*2) : (maxTicks - (2-idx)*5);
+                        if (ticks >= stopThreshold) {
+                            r.sym.innerText = targetSymbols[idx];
+                        } else {
+                            r.sym.innerText = tempIcons[Math.floor(Math.random() * tempIcons.length)];
+                            r.sym.style.transform = `translateY(${Math.random() * 10 - 5}px)`; 
+                        }
+                    });
+                    if (ticks >= maxTicks) {
+                        clearInterval(animInterval);
+                        reels.forEach((r, idx) => {
+                            r.sym.innerText = targetSymbols[idx];
+                            r.sym.style.transform = 'translateY(0)';
+                        });
+                        resolve();
+                    }
+                }, intervalTime);
+            });
+        }
+        algoSelect.addEventListener('change', (e) => {
+            currentAlgo = e.target.value;
+            useLCG = currentAlgo === 'lcg';
+            seedContainer.classList.add('hidden');
+            ccgContainer.classList.add('hidden');
+            if (currentAlgo === 'lcg') {
+                seedContainer.classList.remove('hidden');
+                addLog('Config', 'Engine diganti ke LCG (Linear Congruential Generator). Deterministic mode active.');
+            } else if (currentAlgo === 'ccg') {
+                ccgContainer.classList.remove('hidden');
+                buildCCGPool(); 
+                addLog('Config', 'Engine diganti ke Mode Bandar (CCG). Hasil telah dipredeterminasi dalam Deck 100 putaran.');
+            } else {
+                addLog('Config', 'Engine diganti ke Standard Math.random().');
+            }
+        });
+        btnSetSeed.addEventListener('click', () => {
+            const newSeed = parseInt(seedInput.value) || 1337;
+            currentLCG = new LCG(newSeed);
+            addLog('Config', `LCG Seed ditetapkan ke: <span class="text-yellow-500">${newSeed}</span>`);
+        });
+        btnSetCcg.addEventListener('click', buildCCGPool);
+        btnTopup.addEventListener('click', () => {
+            balance += 1000000;
+            updateBalanceUI();
+            addLog('Finance', 'Top Up Injected: <span class="text-emerald-500 font-bold">+Rp 1.000.000</span>');
+        });
+        btnSpin1.addEventListener('click', () => spin(1));
+        btnSpin10.addEventListener('click', () => spin(10));
+        btnReset.addEventListener('click', () => {
+            stats = { SSR: 0, SR: 0, R: 0, N: 0, Total: 0 };
+            balance = 1000000;
+            updateStatsUI();
+            updateBalanceUI();
+            historyLog.innerHTML = '';
+            currentPrngVal.innerText = 'Initialize Sequence...';
+            winMessage.innerText = "READY TO HACK";
+            winMessage.className = "text-2xl font-black text-yellow-400 tracking-widest drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] h-8 block uppercase";
+            reels.forEach(r => {
+                r.sym.innerText = '❓';
+                r.box.classList.remove('win-glow-ssr', 'win-glow-sr', 'win-glow-r');
+            });
+            addLog('System', 'Terminal memory di-reset ke state awal.');
+        });
+        updateBalanceUI();
+        addLog('System', 'Booting OS... Security Terminal Siap. Engine Default: Math.random()');
+    </script>
+</body>
+</html>

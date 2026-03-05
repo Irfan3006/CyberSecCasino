@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Gacha PRNG - Cyber Sec Edition</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        ssr: '#fbbf24', 
+                        sr: '#a855f7',  
+                        r: '#3b82f6',   
+                        n: '#9ca3af'    
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .gacha-item {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300 min-h-screen font-sans">
+    <nav class="border-b border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="/" class="flex items-center gap-3 cursor-pointer">
+                    <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    <h1 class="text-xl font-bold tracking-tight">Gacha<span class="text-blue-500">Sec</span> PRNG</h1> 
+                </a>
+                <button id="theme-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors focus:outline-none">
+                    <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden text-yellow-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+                    <svg id="theme-toggle-dark-icon" class="w-5 h-5 hidden text-blue-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="space-y-6">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Konfigurasi PRNG</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">Algoritma</label>
+                            <select id="algo-select" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                                <option value="math">Standard Math.random()</option>
+                                <option value="lcg">Linear Congruential Generator (LCG)</option>
+                                <option value="ccg">Custom Card Gacha (CCG / Mode Bandar)</option>
+                            </select>
+                        </div>
+                        <div id="seed-container" class="hidden">
+                            <label class="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">Seed (Angka Awal)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="seed-input" value="1337" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono">
+                                <button id="btn-set-seed" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 rounded-lg text-sm font-medium transition-colors">Set</button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Dalam Cyber Security, algoritma LCG tidak aman karena jika seed diketahui, pola angka acaknya dapat diprediksi 100%.</p>
+                        </div>
+                        <div id="ccg-container" class="hidden mt-4 p-4 bg-gray-100 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <label class="block text-sm font-medium mb-3 text-gray-600 dark:text-gray-400">Kuota Bandar (Total wajib 100)</label>
+                            <div class="grid grid-cols-4 gap-2 mb-3">
+                                <div>
+                                    <span class="text-[10px] font-bold text-yellow-600 dark:text-yellow-500 text-center block mb-1">SSR</span>
+                                    <input type="number" id="in-ssr" value="1" min="0" max="100" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm text-center font-mono">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-purple-600 dark:text-purple-400 text-center block mb-1">SR</span>
+                                    <input type="number" id="in-sr" value="9" min="0" max="100" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm text-center font-mono">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 text-center block mb-1">R</span>
+                                    <input type="number" id="in-r" value="30" min="0" max="100" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm text-center font-mono">
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 text-center block mb-1">Normal</span>
+                                    <input type="number" id="in-n" value="60" min="0" max="100" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm text-center font-mono">
+                                </div>
+                            </div>
+                            <button id="btn-set-ccg" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 py-2 rounded-lg text-sm font-medium transition-colors">Terapkan & Kocok Ulang Deck</button>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
+                        <div>
+                            <span class="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Saldo Tersedia</span>
+                            <div id="saldo-display" class="text-xl font-bold text-gray-900 dark:text-white">Rp 1.000.000</div>
+                        </div>
+                        <button id="btn-topup" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm shadow-emerald-500/30 transition-all active:scale-95">+ Top Up</button>
+                    </div>
+                    <div class="mt-6 flex gap-3">
+                        <button id="btn-pull-1" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex flex-col items-center leading-tight"><span>Pull 1x</span><span class="text-[10px] font-normal opacity-80 mt-0.5">Rp 10.000</span></button>
+                        <button id="btn-pull-10" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-xl font-semibold shadow-lg shadow-purple-500/30 transition-all active:scale-95 flex flex-col items-center leading-tight"><span>Pull 10x</span><span class="text-[10px] font-normal opacity-80 mt-0.5">Rp 100.000</span></button>
+                    </div>
+                    <button id="btn-reset" class="w-full mt-3 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 py-2 rounded-lg text-sm font-medium transition-colors">Reset Data</button>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Statistik (Drop Rate)</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-900/50">
+                            <div class="text-xs font-semibold text-yellow-600 dark:text-yellow-500">SSR (1%)</div>
+                            <div id="stat-ssr" class="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-900/50">
+                            <div class="text-xs font-semibold text-purple-600 dark:text-purple-400">SR (9%)</div>
+                            <div id="stat-sr" class="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50">
+                            <div class="text-xs font-semibold text-blue-600 dark:text-blue-400">R (30%)</div>
+                            <div id="stat-r" class="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                            <div class="text-xs font-semibold text-gray-500 dark:text-gray-400">Normal (60%)</div>
+                            <div id="stat-n" class="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Total Pulls:</span>
+                        <span id="stat-total" class="font-bold text-lg">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 h-full min-h-[500px] flex flex-col">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold">Hasil Gacha Terakhir</h2>
+                        <span id="current-prng-val" class="text-xs font-mono bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded text-gray-500 hidden sm:block"></span>
+                    </div>
+                    <div id="result-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 flex-grow content-start">
+                        <div id="empty-state" class="col-span-full h-64 flex flex-col items-center justify-center text-gray-400">
+                            <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            <p>Belum ada simulasi yang dijalankan.</p>
+                            <p class="text-sm mt-1">Tekan "Pull 1x" atau "Pull 10x" untuk memulai.</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 h-48 flex flex-col">
+                        <h3 class="text-sm font-semibold mb-2 text-gray-500">Log Aktivitas</h3>
+                        <div id="history-log" class="flex-grow overflow-y-auto space-y-1 text-xs font-mono bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            lightIcon.classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            darkIcon.classList.remove('hidden');
+        }
+        themeToggleBtn.addEventListener('click', function() {
+            darkIcon.classList.toggle('hidden');
+            lightIcon.classList.toggle('hidden');
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+        const dropRates = {
+            SSR: { prob: 0.01, color: 'border-ssr bg-ssr/10 text-ssr', bg: 'from-yellow-400/20 to-yellow-600/20', items: ["0-Day Exploit", "Quantum Decryptor", "Root Akses (God Mode)"] },
+            SR:  { prob: 0.09, color: 'border-sr bg-sr/10 text-sr', bg: 'from-purple-400/20 to-purple-600/20', items: ["Kernel Rootkit", "Advanced RAT", "Botnet C&C"] },
+            R:   { prob: 0.30, color: 'border-r bg-r/10 text-r', bg: 'from-blue-400/20 to-blue-600/20', items: ["VPN Premium Key", "Proxy Chain Node", "Phishing Kit"] },
+            N:   { prob: 0.60, color: 'border-n bg-n/10 text-n', bg: 'from-gray-400/20 to-gray-600/20', items: ["IP Log File", "Ping Request", "Broken LAN Cable", "Default Password"] }
+        };
+        class LCG {
+            constructor(seed) {
+                this.seed = seed;
+                this.a = 1103515245;
+                this.c = 12345;
+                this.m = Math.pow(2, 31);
+            }
+            next() {
+                this.seed = (this.a * this.seed + this.c) % this.m;
+                return this.seed / this.m; 
+            }
+        }
+        let currentLCG = new LCG(1337);
+        let useLCG = false;
+        let currentAlgo = 'math'; 
+        let ccgPool = []; 
+        let stats = { SSR: 0, SR: 0, R: 0, N: 0, Total: 0 };
+        let balance = 1000000; 
+        const PRICE_PER_PULL = 10000; 
+        const algoSelect = document.getElementById('algo-select');
+        const seedContainer = document.getElementById('seed-container');
+        const seedInput = document.getElementById('seed-input');
+        const btnSetSeed = document.getElementById('btn-set-seed');
+        const ccgContainer = document.getElementById('ccg-container');
+        const inSSR = document.getElementById('in-ssr');
+        const inSR = document.getElementById('in-sr');
+        const inR = document.getElementById('in-r');
+        const inN = document.getElementById('in-n');
+        const btnSetCcg = document.getElementById('btn-set-ccg');
+        const saldoDisplay = document.getElementById('saldo-display');
+        const btnTopup = document.getElementById('btn-topup');
+        const btnPull1 = document.getElementById('btn-pull-1');
+        const btnPull10 = document.getElementById('btn-pull-10');
+        const btnReset = document.getElementById('btn-reset');
+        const resultGrid = document.getElementById('result-grid');
+        const emptyState = document.getElementById('empty-state');
+        const historyLog = document.getElementById('history-log');
+        const currentPrngVal = document.getElementById('current-prng-val');
+        function buildCCGPool() {
+            let ssr = parseInt(inSSR.value) || 0;
+            let sr = parseInt(inSR.value) || 0;
+            let r = parseInt(inR.value) || 0;
+            let n = parseInt(inN.value) || 0;
+            let total = ssr + sr + r + n;
+            if (total !== 100) {
+                addLog('Error', `<span class="text-red-500">Gagal: Total kartu harus 100 (Saat ini: ${total}). Memuat rate default...</span>`);
+                ssr = 1; sr = 9; r = 30; n = 60;
+                inSSR.value = 1; inSR.value = 9; inR.value = 30; inN.value = 60;
+            }
+            ccgPool = [];
+            for(let i=0; i<ssr; i++) ccgPool.push('SSR');
+            for(let i=0; i<sr; i++) ccgPool.push('SR');
+            for(let i=0; i<r; i++) ccgPool.push('R');
+            for(let i=0; i<n; i++) ccgPool.push('N');
+            for (let i = ccgPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [ccgPool[i], ccgPool[j]] = [ccgPool[j], ccgPool[i]];
+            }
+            addLog('System', 'Deck CCG (100 kartu) berhasil dibuat dan diacak.');
+        }
+        algoSelect.addEventListener('change', (e) => {
+            currentAlgo = e.target.value;
+            useLCG = currentAlgo === 'lcg';
+            seedContainer.classList.add('hidden');
+            ccgContainer.classList.add('hidden');
+            if (currentAlgo === 'lcg') {
+                seedContainer.classList.remove('hidden');
+                addLog('System', 'Switched to LCG algorithm. Deterministic mode active.');
+            } else if (currentAlgo === 'ccg') {
+                ccgContainer.classList.remove('hidden');
+                buildCCGPool(); 
+                addLog('System', 'Switched to CCG (Mode Bandar). Probabilitas diatur ketat per 100 pull.');
+            } else {
+                addLog('System', 'Switched to Math.random() algorithm.');
+            }
+        });
+        btnSetSeed.addEventListener('click', () => {
+            const newSeed = parseInt(seedInput.value) || 1337;
+            currentLCG = new LCG(newSeed);
+            addLog('System', `LCG Seed set to: ${newSeed}`);
+        });
+        btnSetCcg.addEventListener('click', buildCCGPool);
+        btnTopup.addEventListener('click', () => {
+            balance += 1000000;
+            updateBalanceUI();
+            addLog('Finance', 'Top Up Dummy Berhasil: <span class="text-emerald-500 font-bold">+Rp 1.000.000</span>');
+        });
+        btnPull1.addEventListener('click', () => performPull(1));
+        btnPull10.addEventListener('click', () => performPull(10));
+        btnReset.addEventListener('click', resetData);
+        function formatRupiah(amount) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+        }
+        function updateBalanceUI() {
+            saldoDisplay.innerText = formatRupiah(balance);
+        }
+        function getPRNGValue() {
+            return useLCG ? currentLCG.next() : Math.random();
+        }
+        function determineRarity(rand) {
+            let cumulative = 0;
+            if (rand < dropRates.SSR.prob) return 'SSR';
+            cumulative += dropRates.SSR.prob;
+            if (rand < cumulative + dropRates.SR.prob) return 'SR';
+            cumulative += dropRates.SR.prob;
+            if (rand < cumulative + dropRates.R.prob) return 'R';
+            return 'N';
+        }
+        function getRandomItem(rarity) {
+            const items = dropRates[rarity].items;
+            return items[Math.floor(Math.random() * items.length)]; 
+        }
+        function performPull(times) {
+            const totalCost = times * PRICE_PER_PULL;
+            if (balance < totalCost) {
+                addLog('Error', `<span class="text-red-500 font-bold">Saldo tidak cukup!</span> Butuh ${formatRupiah(totalCost)} untuk ${times}x Pull.`);
+                saldoDisplay.classList.add('text-red-500', 'animate-pulse');
+                setTimeout(() => saldoDisplay.classList.remove('text-red-500', 'animate-pulse'), 500);
+                return;
+            }
+            balance -= totalCost;
+            updateBalanceUI();
+            if (stats.Total === 0) {
+                emptyState.style.display = 'none';
+            }
+            if (times === 10 || resultGrid.children.length > 20) {
+                 resultGrid.innerHTML = '';
+            }
+            for (let i = 0; i < times; i++) {
+                setTimeout(() => {
+                    let rarity, itemName, logMsg;
+                    if (currentAlgo === 'ccg') {
+                        if (ccgPool.length === 0) {
+                            addLog('System', 'Deck CCG kosong! Mengocok ulang 100 kartu baru...');
+                            buildCCGPool();
+                        }
+                        rarity = ccgPool.pop(); 
+                        itemName = getRandomItem(rarity);
+                        currentPrngVal.innerText = `[CCG] Sisa Kartu Deck: ${ccgPool.length}/100`;
+                        logMsg = `Drawn from Deck -> Got <span class="${dropRates[rarity].color.split(' ')[2]} font-bold">${rarity}</span>: ${itemName}`;
+                    } else {
+                        const rand = getPRNGValue();
+                        currentPrngVal.innerText = `Last PRNG Val: ${rand.toFixed(6)}`;
+                        rarity = determineRarity(rand);
+                        itemName = getRandomItem(rarity);
+                        logMsg = `Rolled [${rand.toFixed(4)}] -> Got <span class="${dropRates[rarity].color.split(' ')[2]} font-bold">${rarity}</span>: ${itemName}`;
+                    }
+                    let rewardAmount = 0;
+                    if (rarity === 'SSR') rewardAmount = 100000;
+                    else if (rarity === 'SR') rewardAmount = 10000;
+                    else if (rarity === 'R') rewardAmount = 5000;
+                    if (rewardAmount > 0) {
+                        balance += rewardAmount;
+                        updateBalanceUI();
+                        logMsg += ` <span class="text-emerald-500 dark:text-emerald-400 font-bold ml-1" title="Hadiah Saldo">(+${formatRupiah(rewardAmount)})</span>`;
+                    }
+                    stats[rarity]++;
+                    stats.Total++;
+                    updateStatsUI();
+                    renderGachaItem(rarity, itemName);
+                    addLog('Pull', logMsg);
+                }, i * 100); 
+            }
+        }
+        function renderGachaItem(rarity, itemName) {
+            const config = dropRates[rarity];
+            const card = document.createElement('div');
+            card.className = `gacha-item relative flex flex-col items-center justify-center p-3 rounded-xl border-2 bg-gradient-to-br ${config.bg} ${config.color.split(' ')[0]} shadow-sm aspect-[3/4] overflow-hidden`;
+            card.innerHTML = `
+                <div class="absolute inset-0 bg-white/10 dark:bg-black/10"></div>
+                <div class="relative z-10 flex flex-col items-center text-center">
+                    <span class="text-2xl md:text-3xl font-black italic mb-2 drop-shadow-md text-inherit">${rarity}</span>
+                    <span class="text-[10px] md:text-xs font-medium text-gray-800 dark:text-gray-200 leading-tight">${itemName}</span>
+                </div>
+            `;
+            resultGrid.prepend(card);
+        }
+        function updateStatsUI() {
+            document.getElementById('stat-ssr').innerText = stats.SSR;
+            document.getElementById('stat-sr').innerText = stats.SR;
+            document.getElementById('stat-r').innerText = stats.R;
+            document.getElementById('stat-n').innerText = stats.N;
+            document.getElementById('stat-total').innerText = stats.Total;
+        }
+        function addLog(type, message) {
+            const time = new Date().toLocaleTimeString('id-ID', { hour12: false });
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span class="text-gray-400">[${time}]</span> <span class="text-blue-500">[${type}]</span> ${message}`;
+            historyLog.prepend(logEntry);
+        }
+        function resetData() {
+            stats = { SSR: 0, SR: 0, R: 0, N: 0, Total: 0 };
+            balance = 1000000; 
+            updateStatsUI();
+            updateBalanceUI();
+            resultGrid.innerHTML = '';
+            resultGrid.appendChild(emptyState);
+            emptyState.style.display = 'flex';
+            historyLog.innerHTML = '';
+            currentPrngVal.innerText = '';
+            addLog('System', 'Data statistik & saldo telah di-reset.');
+        }
+        updateBalanceUI();
+        addLog('System', 'Aplikasi siap. Algoritma default: Math.random()');
+    </script>
+</body>
+</html>
