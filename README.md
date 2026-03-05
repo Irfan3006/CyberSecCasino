@@ -1,5 +1,7 @@
 # CyberSec Casino - PRNG JUDOL Simulator
 
+**🔗 Live Demo: [https://cyberseccasino.netlify.app/](https://cyberseccasino.netlify.app/)**
+
 **IMPORTANT: This project was created exclusively for internal research, experimentation, and personal educational purposes.**
 
 This project is a simulation of Pseudo-Random Number Generator (PRNG) systems commonly used in software development, specifically focusing on probability systems in gacha games and online slot machines (iGaming).
