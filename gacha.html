@@ -51,9 +51,17 @@
         </div>
     </nav>
     <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Tab Switcher -->
+        <div class="flex justify-center mb-6">
+            <div class="bg-gray-200/50 dark:bg-gray-800/50 p-1.5 rounded-xl inline-flex shadow-inner">
+                <button id="tab-pemain" class="px-8 py-2.5 rounded-lg text-sm font-bold bg-white dark:bg-gray-700 shadow shadow-gray-200 dark:shadow-gray-900 text-blue-600 dark:text-blue-400 transition-all">Mode Pemain</button>
+                <button id="tab-bandar" class="px-8 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all">Mode Bandar</button>
+            </div>
+        </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="space-y-6">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <!-- Panel Bandar: Konfigurasi -->
+                <div id="panel-bandar-config" class="hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <h2 class="text-lg font-semibold mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Konfigurasi PRNG</h2>
                     <div class="space-y-4">
                         <div>
@@ -95,7 +103,11 @@
                             <button id="btn-set-ccg" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 py-2 rounded-lg text-sm font-medium transition-colors">Terapkan & Kocok Ulang Deck</button>
                         </div>
                     </div>
-                    <div class="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
+                </div>
+
+                <!-- Panel Pemain: Wallet & Controls -->
+                <div id="panel-pemain-kontrol" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div class="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
                         <div>
                             <span class="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Saldo Tersedia</span>
                             <div id="saldo-display" class="text-xl font-bold text-gray-900 dark:text-white">Rp 1.000.000</div>
@@ -108,7 +120,8 @@
                     </div>
                     <button id="btn-reset" class="w-full mt-3 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 py-2 rounded-lg text-sm font-medium transition-colors">Reset Data</button>
                 </div>
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <!-- Panel Statistik -->
+                <div id="panel-statistik" class="hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <h2 class="text-lg font-semibold mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Statistik (Drop Rate)</h2>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-900/50">
@@ -134,8 +147,9 @@
                     </div>
                 </div>
             </div>
-            <div class="lg:col-span-2">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 h-full min-h-[500px] flex flex-col">
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Panel Hasil Gacha -->
+                <div id="panel-hasil-gacha" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 min-h-[500px] flex flex-col">
                     <div class="flex justify-between items-center mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">
                         <h2 class="text-lg font-semibold">Hasil Gacha Terakhir</h2>
                         <span id="current-prng-val" class="text-xs font-mono bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded text-gray-500 hidden sm:block"></span>
@@ -147,16 +161,50 @@
                             <p class="text-sm mt-1">Tekan "Pull 1x" atau "Pull 10x" untuk memulai.</p>
                         </div>
                     </div>
-                    <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 h-48 flex flex-col">
-                        <h3 class="text-sm font-semibold mb-2 text-gray-500">Log Aktivitas</h3>
-                        <div id="history-log" class="flex-grow overflow-y-auto space-y-1 text-xs font-mono bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                        </div>
+                </div>
+
+                <!-- Panel Log Aktivitas -->
+                <div id="panel-log-aktivitas" class="hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 min-h-[500px] flex flex-col">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200 border-b pb-2 border-gray-100 dark:border-gray-700">Log Aktivitas (Audit Trail)</h3>
+                    <div id="history-log" class="flex-grow overflow-y-auto space-y-2 text-sm font-mono bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     </div>
                 </div>
             </div>
         </div>
     </main>
     <script>
+        const tabPemain = document.getElementById('tab-pemain');
+        const tabBandar = document.getElementById('tab-bandar');
+        const panelBandarConfig = document.getElementById('panel-bandar-config');
+        const panelPemainKontrol = document.getElementById('panel-pemain-kontrol');
+        const panelStatistik = document.getElementById('panel-statistik');
+        const panelHasilGacha = document.getElementById('panel-hasil-gacha');
+        const panelLogAktivitas = document.getElementById('panel-log-aktivitas');
+
+        tabPemain.addEventListener('click', () => {
+            tabPemain.className = "px-8 py-2.5 rounded-lg text-sm font-bold bg-white dark:bg-gray-700 shadow shadow-gray-200 dark:shadow-gray-900 text-blue-600 dark:text-blue-400 transition-all";
+            tabBandar.className = "px-8 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all";
+            
+            panelPemainKontrol.classList.remove('hidden');
+            panelHasilGacha.classList.remove('hidden');
+            
+            panelBandarConfig.classList.add('hidden');
+            panelStatistik.classList.add('hidden');
+            panelLogAktivitas.classList.add('hidden');
+        });
+
+        tabBandar.addEventListener('click', () => {
+            tabBandar.className = "px-8 py-2.5 rounded-lg text-sm font-bold bg-white dark:bg-gray-700 shadow shadow-gray-200 dark:shadow-gray-900 text-blue-600 dark:text-blue-400 transition-all";
+            tabPemain.className = "px-8 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all";
+            
+            panelBandarConfig.classList.remove('hidden');
+            panelStatistik.classList.remove('hidden');
+            panelLogAktivitas.classList.remove('hidden');
+            
+            panelPemainKontrol.classList.add('hidden');
+            panelHasilGacha.classList.add('hidden');
+        });
+
         const themeToggleBtn = document.getElementById('theme-toggle');
         const darkIcon = document.getElementById('theme-toggle-dark-icon');
         const lightIcon = document.getElementById('theme-toggle-light-icon');

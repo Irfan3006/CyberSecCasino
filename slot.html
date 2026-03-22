@@ -57,9 +57,17 @@
         </div>
     </nav>
     <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Tab Switcher -->
+        <div class="flex justify-center mb-6">
+            <div class="bg-gray-200/50 dark:bg-gray-800/50 p-1.5 rounded-xl inline-flex shadow-inner">
+                <button id="tab-pemain" class="px-8 py-2.5 rounded-lg text-sm font-bold bg-white dark:bg-gray-700 shadow shadow-gray-200 dark:shadow-gray-900 text-red-600 dark:text-red-400 transition-all">Mode Pemain</button>
+                <button id="tab-bandar" class="px-8 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all">Mode Bandar</button>
+            </div>
+        </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="space-y-6">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <!-- Panel Bandar: Konfigurasi -->
+                <div id="panel-bandar-config" class="hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <h2 class="text-lg font-semibold mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Konfigurasi Mesin Slot</h2>
                     <div class="space-y-4">
                         <div>
@@ -101,7 +109,11 @@
                             <button id="btn-set-ccg" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 py-2 rounded-lg text-sm font-medium transition-colors">Suntik Deck ke Mesin</button>
                         </div>
                     </div>
-                    <div class="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
+                </div>
+
+                <!-- Panel Pemain: Wallet & Controls -->
+                <div id="panel-pemain-kontrol" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div class="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
                         <div>
                             <span class="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Saldo Credits</span>
                             <div id="saldo-display" class="text-xl font-bold text-gray-900 dark:text-white">Rp 1.000.000</div>
@@ -125,7 +137,8 @@
                     </div>
                     <button id="btn-reset" class="w-full mt-3 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 py-2 rounded-lg text-sm font-medium transition-colors">Reset Terminal</button>
                 </div>
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <!-- Panel Statistik -->
+                <div id="panel-statistik" class="hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <h2 class="text-lg font-semibold mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Statistik (Drop Rate)</h2>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50">
@@ -152,7 +165,8 @@
                 </div>
             </div>
             <div class="lg:col-span-2 flex flex-col gap-6">
-                <div class="bg-gray-900 p-8 rounded-3xl shadow-2xl border-4 border-gray-800 relative overflow-hidden">
+                <!-- Panel Slot Machine -->
+                <div id="panel-hasil-slot" class="bg-gray-900 p-8 rounded-3xl shadow-2xl border-4 border-gray-800 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-600 via-yellow-500 to-red-600"></div>
                     <div class="text-center mb-6">
                         <span id="win-message" class="text-2xl font-black text-yellow-400 tracking-widest drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] h-8 block uppercase">READY TO HACK</span>
@@ -178,15 +192,48 @@
                         <div class="text-xs text-gray-500 font-mono">SEC-TERMINAL v2.0</div>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex-grow flex flex-col">
-                    <h3 class="text-sm font-semibold mb-3 text-gray-600 dark:text-gray-300 border-b pb-2 border-gray-100 dark:border-gray-700">Audit Trail (Log)</h3>
-                    <div id="history-log" class="flex-grow min-h-[200px] max-h-[300px] overflow-y-auto space-y-1 text-xs font-mono bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                <!-- Panel Log Aktivitas -->
+                <div id="panel-log-aktivitas" class="hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex-grow flex flex-col min-h-[500px]">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200 border-b pb-2 border-gray-100 dark:border-gray-700">Audit Trail (Log)</h3>
+                    <div id="history-log" class="flex-grow overflow-y-auto space-y-2 text-sm font-mono bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     </div>
                 </div>
             </div>
         </div>
     </main>
     <script>
+        const tabPemain = document.getElementById('tab-pemain');
+        const tabBandar = document.getElementById('tab-bandar');
+        const panelBandarConfig = document.getElementById('panel-bandar-config');
+        const panelPemainKontrol = document.getElementById('panel-pemain-kontrol');
+        const panelStatistik = document.getElementById('panel-statistik');
+        const panelHasilSlot = document.getElementById('panel-hasil-slot');
+        const panelLogAktivitas = document.getElementById('panel-log-aktivitas');
+
+        tabPemain.addEventListener('click', () => {
+            tabPemain.className = "px-8 py-2.5 rounded-lg text-sm font-bold bg-white dark:bg-gray-700 shadow shadow-gray-200 dark:shadow-gray-900 text-red-600 dark:text-red-400 transition-all";
+            tabBandar.className = "px-8 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all";
+            
+            panelPemainKontrol.classList.remove('hidden');
+            panelHasilSlot.classList.remove('hidden');
+            
+            panelBandarConfig.classList.add('hidden');
+            panelStatistik.classList.add('hidden');
+            panelLogAktivitas.classList.add('hidden');
+        });
+
+        tabBandar.addEventListener('click', () => {
+            tabBandar.className = "px-8 py-2.5 rounded-lg text-sm font-bold bg-white dark:bg-gray-700 shadow shadow-gray-200 dark:shadow-gray-900 text-red-600 dark:text-red-400 transition-all";
+            tabPemain.className = "px-8 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all";
+            
+            panelBandarConfig.classList.remove('hidden');
+            panelStatistik.classList.remove('hidden');
+            panelLogAktivitas.classList.remove('hidden');
+            
+            panelPemainKontrol.classList.add('hidden');
+            panelHasilSlot.classList.add('hidden');
+        });
+
         const themeToggleBtn = document.getElementById('theme-toggle');
         const darkIcon = document.getElementById('theme-toggle-dark-icon');
         const lightIcon = document.getElementById('theme-toggle-light-icon');
