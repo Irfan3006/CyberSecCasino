@@ -76,6 +76,7 @@
                                 <option value="math">Standard Math.random()</option>
                                 <option value="lcg">Linear Congruential Generator (LCG)</option>
                                 <option value="ccg">Mode Bandar (Deck Outcome)</option>
+                                <option value="pity">Pity System (Probabilitas Dinamis)</option>
                             </select>
                         </div>
                         <div id="seed-container" class="hidden">
@@ -107,6 +108,21 @@
                                 </div>
                             </div>
                             <button id="btn-set-ccg" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 py-2 rounded-lg text-sm font-medium transition-colors">Suntik Deck ke Mesin</button>
+                        </div>
+                        <div id="pity-container" class="hidden mt-4 p-4 bg-gray-100 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <label class="block text-sm font-medium mb-3 text-gray-600 dark:text-gray-400">Konfigurasi Pity System</label>
+                            <div class="space-y-3">
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Soft Pity Pemicu (Spin ke-)</span>
+                                    <input type="number" id="in-soft-pity" value="70" min="1" max="100" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm font-mono">
+                                    <p class="text-[10px] text-gray-400 mt-1">Rate Jackpot (SSR) akan naik perlahan setelah spin ini.</p>
+                                </div>
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Hard Pity Wajib (Spin ke-)</span>
+                                    <input type="number" id="in-hard-pity" value="90" min="1" max="200" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded p-1.5 text-sm font-mono">
+                                    <p class="text-[10px] text-gray-400 mt-1">Mendapatkan Jackpot dijamin 100% pada spin ini.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -279,6 +295,7 @@
         let useLCG = false;
         let currentAlgo = 'math'; 
         let ccgPool = []; 
+        let pityCounter = 0;
         let stats = { SSR: 0, SR: 0, R: 0, N: 0, Total: 0 };
         let balance = 1000000;  
         const PRICE_PER_SPIN = 10000; 
@@ -288,11 +305,14 @@
         const seedInput = document.getElementById('seed-input');
         const btnSetSeed = document.getElementById('btn-set-seed');
         const ccgContainer = document.getElementById('ccg-container');
+        const pityContainer = document.getElementById('pity-container');
         const inSSR = document.getElementById('in-ssr');
         const inSR = document.getElementById('in-sr');
         const inR = document.getElementById('in-r');
         const inN = document.getElementById('in-n');
         const btnSetCcg = document.getElementById('btn-set-ccg');
+        const inSoftPity = document.getElementById('in-soft-pity');
+        const inHardPity = document.getElementById('in-hard-pity');
         const saldoDisplay = document.getElementById('saldo-display');
         const btnTopup = document.getElementById('btn-topup');
         const btnSpin1 = document.getElementById('btn-spin-1');
@@ -419,9 +439,41 @@
                     }
                     outcome = ccgPool.pop();
                     randStr = `[CCG] Sisa: ${ccgPool.length}`;
+                } else if (currentAlgo === 'pity') {
+                    pityCounter++;
+                    let softPity = parseInt(inSoftPity.value) || 70;
+                    let hardPity = parseInt(inHardPity.value) || 90;
+                    
+                    let currentSSRProb = RATES.SSR;
+                    if (pityCounter >= hardPity) {
+                        currentSSRProb = 1.0;
+                    } else if (pityCounter >= softPity) {
+                        let extraProb = (pityCounter - softPity + 1) * 0.05;
+                        currentSSRProb = Math.min(1.0, currentSSRProb + extraProb);
+                    }
+                    
+                    const rand = Math.random();
+                    if (rand < currentSSRProb) {
+                        outcome = 'SSR';
+                    } else {
+                         let remainingProb = 1.0 - currentSSRProb;
+                         let scale = remainingProb / 0.98; // Original non-SSR total is 0.98
+                         let srProb = RATES.SR * scale;
+                         let rProb = RATES.R * scale;
+                         
+                         let adjustedRand = rand - currentSSRProb;
+                         if (adjustedRand < srProb) outcome = 'SR';
+                         else if (adjustedRand < srProb + rProb) outcome = 'R';
+                         else outcome = 'N';
+                    }
+                    let pullNum = pityCounter;
+                    if (outcome === 'SSR') { pityCounter = 0; }
+                    randStr = `[Pity ke-${pullNum}] Rate: ${(currentSSRProb*100).toFixed(1)}%`;
                 } else {
                     const rand = getPRNGValue();
                     outcome = determineOutcome(rand);
+                    if (outcome === 'SSR') pityCounter = 0;
+                    else pityCounter++;
                     randStr = `[PRNG] Val: ${rand.toFixed(6)}`;
                 }
                 stats[outcome]++;
@@ -452,6 +504,7 @@
                 }
                 let logMsg = `Spin ${i+1}/${times} ${randStr} -> Result: <span class="${SYMBOLS[outcome].text} font-bold">${outcome}</span>`;
                 if (reward > 0) logMsg += ` <span class="text-emerald-500 font-bold">(+${formatRupiah(reward)})</span>`;
+                if (currentAlgo === 'pity' && outcome === 'SSR') logMsg += ` <span class="text-yellow-500 text-xs font-bold ml-1">(PITY RESET)</span>`;
                 addLog('Spin', logMsg);
             }
             if(times > 1) {
@@ -496,6 +549,10 @@
             useLCG = currentAlgo === 'lcg';
             seedContainer.classList.add('hidden');
             ccgContainer.classList.add('hidden');
+            pityContainer.classList.add('hidden');
+            
+            pityCounter = 0;
+
             if (currentAlgo === 'lcg') {
                 seedContainer.classList.remove('hidden');
                 addLog('Config', 'Engine diganti ke LCG (Linear Congruential Generator). Deterministic mode active.');
@@ -503,6 +560,9 @@
                 ccgContainer.classList.remove('hidden');
                 buildCCGPool(); 
                 addLog('Config', 'Engine diganti ke Mode Bandar (CCG). Hasil telah dipredeterminasi dalam Deck 100 putaran.');
+            } else if (currentAlgo === 'pity') {
+                pityContainer.classList.remove('hidden');
+                addLog('Config', 'Engine diganti ke Pity System. Rate Jackpot (SSR) dinaikkan dinamis berdasarkan spin.');
             } else {
                 addLog('Config', 'Engine diganti ke Standard Math.random().');
             }
@@ -523,6 +583,7 @@
         btnReset.addEventListener('click', () => {
             stats = { SSR: 0, SR: 0, R: 0, N: 0, Total: 0 };
             balance = 1000000;
+            pityCounter = 0;
             updateStatsUI();
             updateBalanceUI();
             historyLog.innerHTML = '';
